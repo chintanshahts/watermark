@@ -1,0 +1,33 @@
+{
+  "name": "watermark",
+  "version": "1.0.0",
+  "description": "A powerful watermark library based on ImageMagick for node.js. This can be used to embed watermark in single page image, multipage image or pdf file.",
+  "main": "./watermark.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "imagemagick": "",
+    "node-ratify": ""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chintanshahts/watermark.git"
+  },
+  "keywords": [
+    "watermark",
+    "image-watermark",
+    "pdf-watermark",
+    "imagemagick",
+    "add watermark"
+  ],
+  "author": {
+    "name": "Chintan Shah",
+    "email": "chintan.shah@technostacks.com"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/chintanshahts/watermark/issues"
+  },
+  "homepage": "https://github.com/chintanshahts/watermark#readme"
+}
