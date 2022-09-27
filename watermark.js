@@ -6,7 +6,7 @@
 **/
 
 // System Imports
-var fs = require('fs'),
+var fs = require('fs').promises,
     im = require('imagemagick'),
     path = require('path'),
     ratify = require('node-ratify');
@@ -17,7 +17,7 @@ var defaultOptions = {
     'change-format': false,
     'output-format': 'jpg',
     'position': 'Center',
-    'color': 'rgba(0,0,0,0.4)',
+    'color': '#ff0000',
     'resize': '100%'
 }
 
@@ -66,24 +66,22 @@ function _isValidPosition(position) {
 }
 
 function _parseOptions(imageData, source, options) {
-
     var retObj = {};
 
     var width = imageData.width;
     var height = imageData.height;
     var fillColor = options.color;
     var watermarkText = options.text;
-    var fileName = options.filename ? options.filename : "watermark";
+    var fileName = options.filename ? options.filename : "watermark.jpg";
     var align = _isValidAlignment(options.align) ? options.align.toLowerCase() : 'dia1';
     var font = options.font;
     var resize = options.resize ? options.resize : defaultOptions.resize;
     // var outputPath = options.dstPath ? options.dstPath :
     // 	path.dirname(source) + '/watermark' + path.extname(source);
-    var outputPath = `/tmp/${fileName}` + path.extname(source);
+    var outputPath = `/tmp/${fileName}`;
     var position = _isValidPosition(options.position) ? options.position : defaultOptions.position;
     var angle = null,
         pointsize = null;
-
     // Check if fillColor is specified
     if (ratify.isEmpty(fillColor))
         fillColor = defaultOptions.color;
@@ -197,7 +195,6 @@ function _parseOptions(imageData, source, options) {
 }
 
 function embedWatermark(source, options) {
-
     if (!source || source == '')
         throw new Error('Image-Watermark::embedWatermark : Specified an invalid image source');
 
@@ -216,7 +213,6 @@ function embedWatermark(source, options) {
         if (err)
             throw new Error('Image-Watermark::embedWatermark : Unable to process image file : ' + err);
         var retObj = _parseOptions(imageData, source, options);
-
         im.convert(retObj.args, function (err, stdout) {
             if (err)
                 console.log('Image-Watermark::embedWatermark : Error in applying watermark : ' + err);
@@ -235,64 +231,45 @@ function embedWatermark(source, options) {
 }
 
 function embedWatermarkWithCb(source, options, callback) {
-
-    var error;
-
-    if ((arguments.length < 2) ||
-        (arguments.length === 2 && !ratify.isFunction(arguments[1])) ||
-        (arguments.length > 2 && !ratify.isFunction(arguments[2]))) {
-        throw new Error('Image-Watermark::embedWatermarkWithCb : Invalid arguments to method embedWatermarkWithCb');
-    } else if (arguments.length === 2 && ratify.isFunction(arguments[1])) {
-        callback = arguments[1];
-        options = null;
-    }
-
-    if (!source || source == '') {
-        error = new Error('Image-Watermark::embedWatermarkWithCb : Specified an invalid image source');
-        return callback(error);
-    }
-
-    // Check if file exists at the specified path
-    fs.lstat(source, function (err, stats) {
-        if (err || !stats.isFile()) {
-            error = new Error('Image-Watermark::embedWatermarkWithCb : Image file doesn\'t exists at ' + source);
-            return callback(error);
-        } else if (!err) {
-
-            // If options are not properly specified, use default options
-            if (!options || typeof options !== 'object')
-                options = defaultOptions;
-
-            // If we reach here that means file exists
-            im.identify(source, function (err, imageData) {
-                if (err) {
-                    error = new Error('Image-Watermark::embedWatermarkWithCb : Unable to process image file : ' + err);
-                    return callback(error);
-                }
-
-                var retObj = _parseOptions(imageData, source, options);
-                im.convert(retObj.args, (err, stdout) => {
-                    if (err) {
-                        error = new Error('Image-Watermark::embedWatermarkWithCb : Error in applying watermark : ' + err);
-                        return callback(error);
-                    } else {
-                        console.log('Image-Watermark::embedWatermarkWithCb : Successfully applied watermark. Please check it at :\n ' + retObj.outputPath);
-                        fs.readFile(retObj.outputPath, (err, data) => {
-                            if (err) {
-                                error = new Error('Image-Watermark::embedWatermarkWithCb : Error in applying watermark : ' + err);
-                                return callback(error);
-                            }
-                            return callback(null, Buffer.from(data).toString('base64'));
-                        })
-
-
-                    }
-                });
-            });
+    return new Promise(function (resolve, reject) {
+        var error;
+        if (!source || source == '') {
+            error = new Error('Image-Watermark::embedWatermarkWithCb : Specified an invalid image source');
+            reject(error)
         }
-    });
+        // If options are not properly specified, use default options
+        if (!options || typeof options !== 'object') {
+            options = defaultOptions;
+        }
 
-    return;
+
+        // If we reach here that means file exists
+        im.identify(source, function (err, imageData) {
+            if (err)
+                throw new Error('Image-Watermark::embedWatermark : Unable to process image file : ' + err);
+            var retObj = _parseOptions(imageData, source, options);
+            im.convert(retObj.args, async (err) => {
+                if (err) {
+                    error = new Error('Image-Watermark::embedWatermarkWithCb : Error in applying watermark : ' + err);
+                    reject(error)
+                } else {
+                    console.log('Image-Watermark::embedWatermarkWithCb : Successfully applied watermark. Please check it at :\n ' + retObj.outputPath);
+                    // read the file from tmp directory
+                    const data = await fs.readFile(retObj.outputPath)
+
+
+                    // delete file from the tmp directory
+                    try {
+                        await fs.unlink(retObj.outputPath)
+                        console.log('file deleted successfully');
+                    } catch (error) {
+                        throw new Error('Image-Watermark::embedWatermark : Unable to read the image file : ' + error);
+                    }
+                    resolve(Buffer.from(data).toString('base64'))
+                }
+            });
+        });
+    })
 }
 
 
