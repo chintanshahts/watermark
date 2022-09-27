@@ -73,12 +73,13 @@ function _parseOptions(imageData, source, options) {
     var height = imageData.height;
     var fillColor = options.color;
     var watermarkText = options.text;
+    var fileName = options.filename ? options.filename : "watermark";
     var align = _isValidAlignment(options.align) ? options.align.toLowerCase() : 'dia1';
     var font = options.font;
     var resize = options.resize ? options.resize : defaultOptions.resize;
     // var outputPath = options.dstPath ? options.dstPath :
     // 	path.dirname(source) + '/watermark' + path.extname(source);
-    var outputPath = '/tmp/watermark' + path.extname(source);
+    var outputPath = `/tmp/${fileName}` + path.extname(source);
     var position = _isValidPosition(options.position) ? options.position : defaultOptions.position;
     var angle = null,
         pointsize = null;
@@ -125,7 +126,6 @@ function _parseOptions(imageData, source, options) {
                 path.basename(outputPath, path.extname(outputPath)) +
                 path.extname(source);
     }
-    console.log("outputPath:::::", outputPath)
     var pointWidth = width,
         pointHeight = height;
 
@@ -227,7 +227,6 @@ function embedWatermark(source, options) {
                         error = new Error('Image-Watermark::embedWatermarkWithCb : Error in applying watermark : ' + err);
                         return error;
                     }
-                    console.log("Came here!!")
                     return { fileObj: data };
                 })
             }
@@ -278,15 +277,12 @@ function embedWatermarkWithCb(source, options, callback) {
                         return callback(error);
                     } else {
                         console.log('Image-Watermark::embedWatermarkWithCb : Successfully applied watermark. Please check it at :\n ' + retObj.outputPath);
-                        console.log("stdout:::", stdout)
                         fs.readFile(retObj.outputPath, (err, data) => {
                             if (err) {
                                 error = new Error('Image-Watermark::embedWatermarkWithCb : Error in applying watermark : ' + err);
                                 return callback(error);
                             }
-
-                            console.log("Came here!!")
-                            return callback(null, data);
+                            return callback(null, Buffer.from(data).toString('base64'));
                         })
 
 
