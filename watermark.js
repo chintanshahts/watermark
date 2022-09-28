@@ -265,7 +265,7 @@ function embedWatermarkWithCb(source, options, callback) {
                     } catch (error) {
                         throw new Error('Image-Watermark::embedWatermark : Unable to read the image file : ' + error);
                     }
-                    resolve(Buffer.from(data).toString('base64'))
+                    resolve(Buffer.from(data, 'binary'))
                 }
             });
         });

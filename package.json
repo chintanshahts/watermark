@@ -1,6 +1,6 @@
 {
   "name": "watermark-cs",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A powerful watermark library based on ImageMagick for node.js. This can be used to embed watermark in single page image, multipage image or pdf file.",
   "main": "./watermark.js",
   "scripts": {
